@@ -28,3 +28,10 @@ export const FPS_UPDATE_INTERVAL = 1000;
 
 /** 像素比上限，避免高 DPR 设备渲染开销过大 */
 export const MAX_DPR = 2;
+
+/** 最小缩放倍率 */
+export const MIN_ZOOM = 0.25;
+/** 最大缩放倍率 */
+export const MAX_ZOOM = 4;
+/** 每次放大/缩小的倍率步长 */
+export const ZOOM_STEP = 1.25;

@@ -4,6 +4,7 @@ export interface Camera {
   n: number;
   m: number;
   theta: number;
+  zoom: number;
 }
 
 export interface JoystickState {
@@ -40,7 +41,7 @@ interface RendererState {
 }
 
 export const useRendererStore = create<RendererState>((set) => ({
-  camera: { n: 0, m: 0, theta: 0 },
+  camera: { n: 0, m: 0, theta: 0, zoom: 1 },
   mode: 'camera',
   joystick: { active: false, dx: 0, dy: 0 },
   fps: 0,

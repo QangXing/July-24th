@@ -18,8 +18,8 @@ export function projectCamera1(
   const dy = y - cam.m;
   const cos = Math.cos(cam.theta);
   const sin = Math.sin(cam.theta);
-  const u = dx * cos + dy * sin;
-  const v = -dx * sin + dy * cos;
+  const u = (dx * cos + dy * sin) * cam.zoom;
+  const v = (-dx * sin + dy * cos) * cam.zoom;
   return [u + FILM_WIDTH / 2, v + FILM_HEIGHT / 2];
 }
 
@@ -40,9 +40,24 @@ export function projectOblique(
   const sin = Math.sin(cam.theta);
   const uRot = dx * cos + dy * sin;
   const vGround = -dx * sin + dy * cos;
-  const u = uRot + vGround / 2;
-  const v = -z + vGround / 2;
+  const u = (uRot + vGround / 2) * cam.zoom;
+  const v = (-z + vGround / 2) * cam.zoom;
   return [u + FILM_WIDTH / 2, v + FILM_HEIGHT / 2];
+}
+
+/**
+ * 屏幕底边中心在 z=0 处的世界坐标。
+ * 垂直墙面的 BSP 遍历以此点为“眼睛”参考，而不是直接用摄像机 (n,m)，
+ * 这样在摄像机上下移动时能得到更稳定的遮挡顺序。
+ */
+function getObliqueViewReference(cam: Camera): [number, number, number] {
+  const cos = Math.cos(cam.theta);
+  const sin = Math.sin(cam.theta);
+  const vGround = FILM_HEIGHT / cam.zoom;
+  const uRot = -vGround / 2;
+  const dx = uRot * cos - vGround * sin;
+  const dy = uRot * sin + vGround * cos;
+  return [cam.n + dx, cam.m + dy, 0];
 }
 
 type ProjectFn = (x: number, y: number, z: number) => [number, number];
@@ -414,7 +429,9 @@ function renderBSP(
 ): void {
   if (!node) return;
 
-  const camCoord = node.axis === 0 ? cam.n : node.axis === 1 ? cam.m : 0;
+  // 用屏幕底边中心对应的地面点作为“眼睛”参考，判断 splitter 的前后关系
+  const ref = getObliqueViewReference(cam);
+  const camCoord = node.axis === 0 ? ref[0] : node.axis === 1 ? ref[1] : ref[2];
   const dCam = camCoord - node.pos;
 
   if (dCam > 0) {

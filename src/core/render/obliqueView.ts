@@ -37,12 +37,12 @@ export function renderObliqueView(
   // 组合变换：先旋转到摄像机参考系，再斜二侧投影
   // u = x*(cos - sin/2) + y*(sin + cos/2) - n*(cos - sin/2) - m*(sin + cos/2)
   // v = x*(-sin/2)       + y*(cos/2)        + n*(sin/2)       - m*(cos/2)
-  const a = cos - 0.5 * sin;
-  const b = -0.5 * sin;
-  const c = sin + 0.5 * cos;
-  const d = 0.5 * cos;
+  const a = cam.zoom * (cos - 0.5 * sin);
+  const b = cam.zoom * (-0.5 * sin);
+  const c = cam.zoom * (sin + 0.5 * cos);
+  const d = cam.zoom * (0.5 * cos);
   const e = cx - cam.n * a - cam.m * c;
-  const f = cy + cam.n * (0.5 * sin) - cam.m * d;
+  const f = cy - cam.n * b - cam.m * d;
 
   filmCtx.setTransform(a, b, c, d, e, f);
 
@@ -86,8 +86,8 @@ function computeObliqueWorldBounds(cam: Camera): {
   maxX: number;
   maxY: number;
 } {
-  const hw = FILM_WIDTH / 2;
-  const hh = FILM_HEIGHT / 2;
+  const hw = FILM_WIDTH / 2 / cam.zoom;
+  const hh = FILM_HEIGHT / 2 / cam.zoom;
   const filmCorners: [number, number][] = [
     [-hw, -hh],
     [hw, -hh],

@@ -132,6 +132,9 @@ export function startRenderLoop(
   const loop = (time: number) => {
     state.lastTime = time;
 
+    // 同步 UI 控制的 zoom 到 cameraRef，避免放大/缩小按钮被渲染循环覆盖
+    refs.cameraRef.current.zoom = useRendererStore.getState().camera.zoom;
+
     applyKeyboard();
     applyJoystick();
     applyPointerRotation();

@@ -1,8 +1,14 @@
 /**
  * 大世界存档加载器。
  *
- * 存档文件格式（每行一个精灵）：
- *   (x1,y1,z1) (x2,y2,z2) image.png
+ * 存档文件格式：
+ *   普通精灵：  (x1,y1,z1) (x2,y2,z2) image.png
+ *   结构定义：  structure name:(
+ *                 (x1,y1,z1) (x2,y2,z2) image-1.png
+ *                 ...
+ *               )
+ *   结构调用：  stu name (x,y,z)
+ *             （tru 也可作为关键字；偏移量可选，省略时视为 (0,0,0)）
  *
  * 坐标必须满足 xy / xz / yz 平面对齐（即有两个坐标分量相同）。
  * 贴图不拉伸：按最大边对齐，另一方向居中，剩余区域透明。
@@ -38,6 +44,74 @@ function parseLine(line: string): WorldEntry | null {
     z2: parseFloat(m[6]),
     imageSrc: m[7],
   };
+}
+
+interface ParsedWorld {
+  entries: WorldEntry[];
+  structures: Map<string, WorldEntry[]>;
+}
+
+function parseWorldText(text: string): ParsedWorld {
+  const structures = new Map<string, WorldEntry[]>();
+  const entries: WorldEntry[] = [];
+
+  const lines = text.split('\n');
+  let currentStructure: string | null = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const structStart = trimmed.match(/^structure\s+(\w+):\s*\(\s*$/);
+    if (structStart) {
+      currentStructure = structStart[1];
+      structures.set(currentStructure, []);
+      continue;
+    }
+
+    if (currentStructure && trimmed === ')') {
+      currentStructure = null;
+      continue;
+    }
+
+    const stuCall = trimmed.match(
+      /^(?:stu|tru)\s+(\w+)(?:\s*\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\))?\s*$/,
+    );
+    if (stuCall) {
+      const name = stuCall[1];
+      const ox = stuCall[2] ? parseFloat(stuCall[2]) : 0;
+      const oy = stuCall[3] ? parseFloat(stuCall[3]) : 0;
+      const oz = stuCall[4] ? parseFloat(stuCall[4]) : 0;
+      const structEntries = structures.get(name);
+      if (structEntries) {
+        for (const e of structEntries) {
+          entries.push({
+            ...e,
+            x1: e.x1 + ox,
+            y1: e.y1 + oy,
+            z1: e.z1 + oz,
+            x2: e.x2 + ox,
+            y2: e.y2 + oy,
+            z2: e.z2 + oz,
+          });
+        }
+      } else {
+        console.warn(`[WorldLoader] 未找到结构: ${name}`);
+      }
+      continue;
+    }
+
+    const entry = parseLine(trimmed);
+    if (entry) {
+      if (currentStructure) {
+        structures.get(currentStructure)!.push(entry);
+      } else {
+        entries.push(entry);
+      }
+    }
+  }
+
+  return { entries, structures };
 }
 
 function detectPlane(e: WorldEntry): SpritePlane | null {
@@ -151,11 +225,7 @@ export async function loadWorldSprites(
     return [];
   }
 
-  const entries: WorldEntry[] = [];
-  for (const line of text.split('\n')) {
-    const entry = parseLine(line);
-    if (entry) entries.push(entry);
-  }
+  const { entries } = parseWorldText(text);
 
   const sprites: Sprite[] = [];
   for (const entry of entries) {

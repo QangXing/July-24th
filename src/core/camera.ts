@@ -44,8 +44,8 @@ export function computeWorldBounds(cam: Camera): {
   maxX: number;
   maxY: number;
 } {
-  const hw = FILM_WIDTH / 2;
-  const hh = FILM_HEIGHT / 2;
+  const hw = FILM_WIDTH / 2 / cam.zoom;
+  const hh = FILM_HEIGHT / 2 / cam.zoom;
   const corners: [number, number][] = [
     [-hw, -hh],
     [hw, -hh],

@@ -1,5 +1,6 @@
 import { useRendererStore } from '@/store/rendererStore';
-import { Camera, Crosshair, Video } from 'lucide-react';
+import { Camera, Crosshair, Video, ZoomIn, ZoomOut } from 'lucide-react';
+import { MAX_ZOOM, MIN_ZOOM, ZOOM_STEP } from '@/core/config';
 
 export function Controls() {
   const camera = useRendererStore((state) => state.camera);
@@ -7,6 +8,7 @@ export function Controls() {
   const fps = useRendererStore((state) => state.fps);
   const joystick = useRendererStore((state) => state.joystick);
   const setMode = useRendererStore((state) => state.setMode);
+  const setCamera = useRendererStore((state) => state.setCamera);
 
   const thetaWrapped = camera.theta % (2 * Math.PI);
   const thetaDeg = ((thetaWrapped * 180) / Math.PI).toFixed(1);
@@ -35,6 +37,10 @@ export function Controls() {
         <div className="info-row">
           <span>FPS</span>
           <span className="value">{fps}</span>
+        </div>
+        <div className="info-row">
+          <span>zoom</span>
+          <span className="value">{camera.zoom.toFixed(2)}x</span>
         </div>
         <div className="mt-2 text-[10px] text-slate-500">
           {mode === 'camera' ? '摄像机1视角' : mode === 'camera2' ? '摄像机2视角' : '调试视角'}
@@ -67,6 +73,26 @@ export function Controls() {
           </>
         )}
       </button>
+
+      {/* 右上角缩放按钮 */}
+      <div className="absolute right-4 top-20 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setCamera({ zoom: Math.min(MAX_ZOOM, camera.zoom * ZOOM_STEP) })}
+          className="control-btn"
+          aria-label="放大"
+        >
+          <ZoomIn className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setCamera({ zoom: Math.max(MIN_ZOOM, camera.zoom / ZOOM_STEP) })}
+          className="control-btn"
+          aria-label="缩小"
+        >
+          <ZoomOut className="h-5 w-5" />
+        </button>
+      </div>
 
       {/* 左下角虚拟摇杆 */}
       <div className="pointer-events-none absolute bottom-6 left-6">

@@ -21,8 +21,9 @@ export function renderCameraView(
   filmCtx.rect(0, 0, FILM_WIDTH, FILM_HEIGHT);
   filmCtx.clip();
 
-  // 将世界坐标映射到胶片坐标：film = filmCenter + rotate(-theta) * (world - cameraPos)
+  // 将世界坐标映射到胶片坐标：film = filmCenter + zoom * rotate(-theta) * (world - cameraPos)
   filmCtx.translate(FILM_WIDTH / 2, FILM_HEIGHT / 2);
+  filmCtx.scale(cam.zoom, cam.zoom);
   filmCtx.rotate(-cam.theta);
   filmCtx.translate(-cam.n, -cam.m);
 
